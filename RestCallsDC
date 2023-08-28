@@ -1,0 +1,405 @@
+Public Function RetrieveUsers()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+Dim recordcount As Integer
+Dim startAt As Integer
+Dim CallAgain As Boolean
+Dim maxRecords As Integer
+Dim continue As Boolean
+continue = True
+maxRecords = 1000
+
+    i = 1
+    CreateSheet ("Users")
+    Range("A1").value = "Count"
+    Range("B1").value = "Key"
+    Range("C1").value = "Name"
+    Range("D1").value = "email Address"
+    Range("E1").value = "Display Name"
+    Range("F1").value = "Active"
+    Range("G1").value = "Deleted"
+    Range("H1").value = "Time Zone"
+    Range("I1").value = "Locale"
+    Range("J1").value = "Issues Created By User"
+    Range("K1").value = "Issues Assigned To User"
+    Range("L1").value = "Issues Reported By User"
+        
+    Do Until continue = False
+    RestCallResponse = RestAPICall("rest/api/2/user/search?username=.&startAt=" & startAt)
+    Set json = ParseJson(RestCallResponse)
+        For Each item In json
+            i = i + 1
+            recordcount = recordcount + 1
+            Range("A" & i).value = recordcount
+            Range("B" & i).value = item("key")
+            Range("C" & i).value = item("name")
+            Range("D" & i).value = item("emailAddress")
+            Range("E" & i).value = item("displayName")
+            Range("F" & i).value = item("active")
+            Range("G" & i).value = item("deleted")
+            Range("H" & i).value = item("timeZone")
+            Range("I" & i).value = item("locale")
+            Range("J" & i).value = RetrieveIssuesCreatedByUser(item("name"))
+            Range("K" & i).value = RetrieveIssuesAssignedToUser(item("name"))
+            Range("L" & i).value = RetrieveIssueCountReportedByUser(item("name"))
+        Next
+        If (maxRecords = recordcount) Then
+            continue = True
+            maxRecords = maxRecords = 1000
+        Else
+            continue = False
+        End If
+    Loop
+      
+End Function
+Public Function RetrieveIssueCountReportedByUser(UserName As String) As Integer
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/search?jql=reporter=" + UserName + "&maxResults=0")
+    Set json = ParseJson(RestCallResponse)
+     RetrieveIssueCountReportedByUser = json("total")
+End Function
+Public Function RetrieveIssuesCreatedByUser(UserName As String) As Integer
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/search?jql=creator =" + UserName + "&maxResults=0")
+    Set json = ParseJson(RestCallResponse)
+     RetrieveIssuesCreatedByUser = json("total")
+End Function
+Public Function RetrieveIssuesAssignedToUser(UserName As String) As Integer
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/search?jql=assignee =" + UserName + "&maxResults=0")
+    Set json = ParseJson(RestCallResponse)
+     RetrieveIssuesAssignedToUser = json("total")
+End Function
+Public Function RetrieveLastTimeIssueCreated(project As String) As String
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/search?jql=project=" + project + " ORDER BY created DESC&maxResults=1")
+    Set json = ParseJson(RestCallResponse)
+    If (json("total") = 0) Then
+        RetrieveLastTimeIssueCreated = "No Issues"
+    Else
+        RetrieveLastTimeIssueCreated = json("issues")(1)("fields")("created")
+    End If
+End Function
+Public Function RetrieveLastTimeIssueUpdated(project As String) As String
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/search?jql=project=" + project + " ORDER BY updated DESC&maxResults=1")
+    Set json = ParseJson(RestCallResponse)
+    If (json("total") = 0) Then
+        RetrieveLastTimeIssueUpdated = "No Issues"
+    Else
+        RetrieveLastTimeIssueUpdated = json("issues")(1)("fields")("updated")
+    End If
+End Function
+Public Function RetrieveApplicationProperties()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/application-properties")
+    Set json = ParseJson(RestCallResponse)
+    CreateSheet ("Application Properties")
+    Range("A1").value = "Count"
+    Range("B1").value = "ID"
+    Range("C1").value = "Key"
+    Range("D1").value = "Value"
+    Range("E1").value = "Name"
+    Range("F1").value = "Type"
+    i = 1
+    For Each item In json
+        i = i + 1
+        Range("A" & i).value = i - 1
+        Range("B" & i).value = item("id")
+        Range("C" & i).value = item("key")
+        Range("D" & i).value = item("value")
+        Range("E" & i).value = item("name")
+        Range("F" & i).value = item("type")
+    Next
+End Function
+Public Function RetrieveAdvanceApplicationProperties()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/application-properties/advanced-settings")
+    Set json = ParseJson(RestCallResponse)
+    CreateSheet ("Advance Application Properties")
+    Range("A1").value = "Count"
+    Range("B1").value = "ID"
+    Range("C1").value = "Key"
+    Range("D1").value = "Value"
+    Range("E1").value = "Name"
+    Range("F1").value = "Type"
+    i = 1
+    For Each item In json
+        i = i + 1
+        Range("A" & i).value = i - 1
+        Range("B" & i).value = item("id")
+        Range("C" & i).value = item("key")
+        Range("D" & i).value = item("value")
+        Range("E" & i).value = item("name")
+        Range("F" & i).value = item("type")
+    Next
+End Function
+Public Function RetrieveProjects()
+Dim json As Object
+Dim currentproject As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+Dim recordcount As Integer
+Dim startAt As Integer
+Dim CallAgain As Boolean
+Dim maxRecords As Integer
+Dim continue As Boolean
+continue = True
+maxRecords = 1000
+
+    i = 1
+    CreateSheet ("Projects")
+    Range("A1").value = "Project Name"
+    Range("B1").value = "Count"
+    Range("C1").value = "Key"
+    Range("D1").value = "ID"
+    Range("E1").value = "Project Type"
+    Range("F1").value = "Category"
+    Range("G1").value = "Archived"
+    Range("H1").value = "Last Time Issue Updated"
+    Range("I1").value = "Last Time Issue Created"
+     
+    RestCallResponse = RestAPICall("rest/api/2/project")
+    Set json = ParseJson(RestCallResponse)
+        For Each item In json
+            i = i + 1
+            recordcount = recordcount + 1
+            Range("A" & i).value = item("name")
+            Range("B" & i).value = recordcount
+            Range("C" & i).value = item("key")
+            Range("D" & i).value = item("id")
+            Range("E" & i).value = item("projectTypeKey")
+            Range("F" & i).value = item("projectCategory")("name")
+            Range("G" & i).value = item("archived")
+            Range("H" & i).value = RetrieveLastTimeIssueUpdated(item("id"))
+            Range("I" & i).value = RetrieveLastTimeIssueCreated(item("id"))
+            Set currentproject = ParseJson(RestAPICall("rest/api/2/project/" + item("id")))
+            i = i + 1
+            Range("B" & i).value = "Lead:"
+            Range("C" & i).value = currentproject("lead")("displayName")
+            Range("D" & i).value = currentproject("lead")("name")
+            Range("E" & i).value = currentproject("lead")("key")
+            Range("F" & i).value = "Is Active: " & currentproject("lead")("active")
+            
+            Dim components As Object
+            For Each components In currentproject("components")
+                i = i + 1
+                Range("B" & i).value = "Component:"
+                Range("C" & i).value = components("id")
+                Range("D" & i).value = components("name")
+            Next
+            Set currentstatuses = ParseJson(RestAPICall("rest/api/2/project/" + item("id") + "/statuses"))
+            Dim issueTypes As Object
+            For Each issueTypes In currentstatuses
+                i = i + 1
+                Range("B" & i).value = "Issue Type:"
+                Range("C" & i).value = issueTypes("id")
+                Range("D" & i).value = issueTypes("name")
+                Range("E" & i).value = "Is it a subtask: " & issueTypes("subtask")
+                
+                Dim status As Object
+                For Each status In issueTypes("statuses")
+                    i = i + 1
+                    Range("C" & i).value = "Status:"
+                    Range("D" & i).value = status("name")
+                    Range("E" & i).value = status("id")
+                    Range("F" & i).value = status("statusCategory")("name")
+                Next
+            Next
+            Dim Versions As Object
+            For Each Versions In currentproject("versions")
+                i = i + 1
+                Range("B" & i).value = "Version:"
+                Range("C" & i).value = Versions("id")
+                Range("D" & i).value = Versions("name")
+                Range("E" & i).value = "Is It Archived: " & Versions("archived")
+                Range("E" & i).value = "Has It Been Released: " & Versions("released")
+            Next
+            Dim role As Variant
+            For Each role In currentproject("roles")
+                i = i + 1
+                Debug.Print currentproject("roles")(role)
+                Range("B" & i).value = "Role:"
+                Range("C" & i).value = role
+                
+            Next
+            Set currentworkflowscheme = ParseJson(RestAPICall("rest/api/2/project/" + item("id") + "/workflowscheme"))
+            Dim workflowscheme As Variant
+            For Each workflowscheme In currentworkflowscheme("issueTypeMappings")
+                i = i + 1
+                'Debug.Print workflowscheme
+                'Debug.Print currentworkflowscheme("issueTypeMappings")(workflowscheme)
+                Range("B" & i).value = "Workflow Scheme:"
+                Range("C" & i).value = workflowscheme
+                Range("D" & i).value = currentworkflowscheme("issueTypeMappings")(workflowscheme)
+            Next
+            Set currentnotificationscheme = ParseJson(RestAPICall("rest/api/2/project/" + item("id") + "/notificationscheme/"))
+            i = i + 1
+            Range("B" & i).value = "Notification Scheme:"
+            Range("C" & i).value = currentnotificationscheme("id")
+            Range("D" & i).value = currentnotificationscheme("name")
+            Range("E" & i).value = currentnotificationscheme("description")
+            Set permissionscheme = ParseJson(RestAPICall("rest/api/2/project/" + item("id") + "/permissionscheme"))
+            i = i + 1
+            Range("B" & i).value = "Permission Scheme:"
+            Range("C" & i).value = permissionscheme("id")
+            Range("D" & i).value = permissionscheme("name")
+            Range("E" & i).value = permissionscheme("description")
+            
+        Next
+    
+End Function
+Public Function RetrieveMyComponents() As Object
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/application-properties")
+    Set json = ParseJson(RestCallResponse)
+End Function
+
+
+Function Structure()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/2/application-properties/advanced-settings")
+    Set json = ParseJson(RestCallResponse)
+    CreateSheet ("Advance Application Properties")
+    Range("A1").value = "Count"
+    Range("B1").value = "ID"
+    Range("C1").value = "Key"
+    Range("D1").value = "Value"
+    Range("E1").value = "Name"
+    Range("F1").value = "Type"
+    i = 1
+    For Each item In json
+        i = i + 1
+        Range("A" & i).value = i - 1
+        Range("B" & i).value = item("id")
+        Range("C" & i).value = item("key")
+        Range("D" & i).value = item("value")
+        Range("E" & i).value = item("name")
+        Range("F" & i).value = item("type")
+    Next
+End Function
+Function RetrieveFilters()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/greenhopper/1.0/savedfilter/list")
+    Set json = ParseJson(RestCallResponse)
+    CreateSheet ("Filters")
+    Range("A1").value = "Count"
+    Range("B1").value = "ID"
+    Range("C1").value = "Name"
+    Range("D1").value = "Owner Username"
+    Range("E1").value = "Owner Display Name"
+    Range("F1").value = "Query"
+    i = 1
+    For Each item In json("filters")
+        i = i + 1
+        Range("A" & i).value = i - 1
+        Range("B" & i).value = item("id")
+        Range("C" & i).value = item("name")
+        Range("D" & i).value = item("owner")("userName")
+        Range("E" & i).value = item("owner")("displayName")
+        Range("E" & i).value = item("query")
+        Dim permission As Object
+        For Each permission In item("permissionEntries")
+         Dim value As Object
+         Dim cleanup As String
+            For Each value In permission("values")
+                i = i + 1
+                Range("B" & i).value = "Permission"
+                cleanup = Replace(value("name"), "<b>", "")
+                cleanup = Replace(cleanup, "</b>", "")
+                Range("C" & i).value = value("type")
+                Range("D" & i).value = cleanup
+            Next
+            
+        Next
+    Next
+End Function
+Public Function RetrieveCustomFields()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+Dim recordcount As Integer
+Dim startAt As Integer
+Dim CallAgain As Boolean
+Dim maxRecords As Integer
+Dim continue As Boolean
+continue = True
+maxRecords = 1000
+
+    i = 1
+    CreateSheet ("Users")
+    Range("A1").value = "Count"
+    Range("B1").value = "Key"
+    Range("C1").value = "Name"
+    Range("D1").value = "email Address"
+    Range("E1").value = "Display Name"
+    Range("F1").value = "Active"
+    Range("G1").value = "Deleted"
+    Range("H1").value = "Time Zone"
+    Range("I1").value = "Locale"
+    Range("J1").value = "Issues Created By User"
+    Range("K1").value = "Issues Assigned To User"
+    Range("L1").value = "Issues Reported By User"
+        
+    Do Until continue = False
+    RestCallResponse = RestAPICall("rest/api/2/user/search?username=.&startAt=" & startAt)
+    Set json = ParseJson(RestCallResponse)
+        For Each item In json
+            i = i + 1
+            recordcount = recordcount + 1
+            Range("A" & i).value = recordcount
+            Range("B" & i).value = item("key")
+            Range("C" & i).value = item("name")
+            Range("D" & i).value = item("emailAddress")
+            Range("E" & i).value = item("displayName")
+            Range("F" & i).value = item("active")
+            Range("G" & i).value = item("deleted")
+            Range("H" & i).value = item("timeZone")
+            Range("I" & i).value = item("locale")
+            Range("J" & i).value = RetrieveIssuesCreatedByUser(item("name"))
+            Range("K" & i).value = RetrieveIssuesAssignedToUser(item("name"))
+            Range("L" & i).value = RetrieveIssueCountReportedByUser(item("name"))
+        Next
+        If (maxRecords = recordcount) Then
+            continue = True
+            maxRecords = maxRecords = 1000
+        Else
+            continue = False
+        End If
+    Loop
+      
+End Function
