@@ -1,1 +1,30 @@
+Public Function RetrieveCloudApplicationProperties()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/3/serverInfo")
+    Set json = ParseJson(RestCallResponse)
+    CreateSheet ("Server Information")
+    Range("A1").value = "ID"
+    Range("B1").value = "Value"
+    
+    Range("A" & 2).value = "Base URL"
+    Range("A" & 3).value = "Deployment Type"
+    Range("A" & 4).value = "Build Number"
+    Range("A" & 5).value = "Build Date"
+    Range("A" & 6).value = "Server Time"
+    Range("A" & 7).value = "SCM Information"
+    Range("A" & 8).value = "Server Title"
+    Range("A" & 9).value = "Default Locale"
+    
+    Range("B" & 2).value = json("baseUrl")
+    Range("B" & 3).value = json("deploymentType")
+    Range("B" & 4).value = json("buildNumber")
+    Range("B" & 5).value = json("buildDate")
+    Range("B" & 6).value = json("serverTime")
+    Range("B" & 7).value = json("scmInfo")
+    Range("B" & 8).value = json("serverTitle")
+    Range("B" & 9).value = json("defaultLocale")("locale")
 
+End Function
