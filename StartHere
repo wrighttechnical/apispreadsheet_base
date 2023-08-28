@@ -1,0 +1,52 @@
+Public JiraService As MSXML2.XMLHTTP60
+Public UserNamePassword As String
+Public URL As String
+Public JiraInstance As Workbook
+Public RestApiWB As Workbook
+Public CloudInstance As Boolean
+'================================================================================================
+'========== startAt - the item used as the first item in the page of results.        ============
+'========== maxResults - how many results to return per page.                        ============
+'========== total- the number of items that the calling user has permissions for.    ============
+'========== This number may change while the client requests the next pages.         ============
+'========== A client should always assume that the requested page can be empty.      ============
+'================================================================================================
+Sub StartHere()
+    Dim UserName As String
+    Dim Password As String
+'===================================================================================
+' Setting Sheet To Get Url,Username, Password
+'===================================================================================
+    Workbooks("RestAPI").Activate
+    Set RestApiWB = ActiveWorkbook
+    Sheets("ServerInformation").Select
+    UserName = Range("B2")
+    Password = Range("B3")
+    URL = Range("B4")
+    CloudInstance = InStr(URL, "atlassian.net")
+    UserNamePassword = EncodeToBase64(UserName + ":" + Password)
+    
+    Range("B10") = UserNamePassword
+    Set JiraInstance = Workbooks.Add
+        
+    If (CloudInstance) Then
+        'RetrieveCloudUsers
+        RetrieveCloudFilters
+        'RetrieveCloudProjects
+        'RetrieveCloudApplicationProperties
+    Else
+    
+        RetrieveApplicationProperties
+        RetrieveAdvanceApplicationProperties
+        RetrieveUsers
+        RetrieveProjects
+        RetrieveFilters
+        
+    End If
+    If (RangeExists("Sheet1") = True And JiraInstance.Worksheets.Count > 1) Then
+        Application.DisplayAlerts = False
+        Worksheets("Sheet1").Delete
+        Application.DisplayAlerts = True
+    End If
+    
+End Sub
