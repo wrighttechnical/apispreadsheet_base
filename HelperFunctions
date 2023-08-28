@@ -1,0 +1,73 @@
+Public Function EncodeToBase64(ConvertMe As String) As String
+Dim objXML As MSXML2.DOMDocument60
+Dim objNode As MSXML2.IXMLDOMElement
+Dim arrData() As Byte
+    arrData = StrConv(ConvertMe, vbFromUnicode)
+    Set objXML = New MSXML2.DOMDocument60
+    Set objNode = objXML.createElement("b64")
+    objNode.DataType = "bin.base64"
+    objNode.nodeTypedValue = arrData
+    EncodeToBase64 = Replace(objNode.Text, vbLf, "")
+    Set objNode = Nothing
+    Set objXML = Nothing
+    
+End Function
+Function RangeExists(WhatSheet As String, Optional ByVal WhatRange As String = "A1") As Boolean
+    Dim test As Range
+    On Error Resume Next
+    Set test = ActiveWorkbook.Sheets(WhatSheet).Range(WhatRange)
+    RangeExists = Err.Number = 0
+    On Error GoTo 0
+End Function
+Sub AddCustomHeader()
+Dim inputText As String
+inputText = InputBox("Enter your text for the custom header", "Custom Header")
+    With ActiveSheet.PageSetup
+        .LeftHeader = ""
+        .CenterHeader = inputText
+        .RightHeader = ""
+    End With
+End Sub
+Function CreateSheet(SheetName As String)
+If (RangeExists(SheetName) = False) Then
+    Worksheets.Add().Name = SheetName
+End If
+End Function
+
+Public Function RestAPICall(query As String) As String
+Dim json As Object
+Dim RestCall As String
+Set JiraService = New MSXML2.XMLHTTP60
+With JiraService
+     RestCall = URL + query
+     'Debug.Print (RestCall)
+     .Open "GET", RestCall, False
+     .SetRequestHeader "Content-Type", "application/json"
+     .SetRequestHeader "Accept", "application/json"
+     .SetRequestHeader "User-Agent", "Edg/90.-/818.46"
+     .SetRequestHeader "Authorization", "Basic " & UserNamePassword
+     
+     .Send
+   
+     If .status = "401" Then
+        RestAPICall = "401"
+     Else
+        RestAPICall = JiraService.ResponseText
+     End If
+   
+     
+End With
+Set JiraService = Nothing
+End Function
+
+Public Function GroupRows(Col As String, startRow As Integer, endRow As Integer) As Boolean
+
+    Range(Col & startRow & ":" & Col & endRow).Select
+    Selection.Rows.Group
+    With ActiveSheet.Outline
+        .AutomaticStyles = False
+        .SummaryRow = xlAbove
+        .SummaryColumn = xlRight
+    End With
+
+End Function
