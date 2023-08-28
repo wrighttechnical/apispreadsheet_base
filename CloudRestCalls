@@ -28,3 +28,301 @@ Dim i As Integer
     Range("B" & 9).value = json("defaultLocale")("locale")
 
 End Function
+
+Public Function RetrieveCloudProjects()
+Dim json As Object
+Dim currentproject As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+Dim recordcount As Integer
+Dim startAt As Integer
+Dim IsLast As Boolean
+Dim startRow As Integer
+Dim endRow As Integer
+
+    startAt = 0
+    i = 1
+    CreateSheet ("Projects")
+    
+    Range("A1").value = "Count"
+    Range("B1").value = "Project Name"
+    Range("C1").value = "Key"
+    Range("D1").value = "ID"
+    Range("E1").value = "Project Type"
+    Range("F1").value = "Private"
+    Range("G1").value = "Style"
+    Range("H1").value = "Issue Count"
+    Range("I1").value = "Last Time Issue Updated"
+    Range("J1").value = "Lead Name"
+    Range("K1").value = "Lead Is Active"
+    Range("L1").value = "Default Assignee"
+    
+    Do Until IsLast = True
+    
+    RestCallResponse = RestAPICall("rest/api/3/project/search?expand=insight,issueTypes&orderBy=category&startAt=" & startAt)
+    Set json = ParseJson(RestCallResponse)
+        For Each item In json("values")
+            i = i + 1
+            recordcount = recordcount + 1
+            Range("A" & i).value = recordcount
+            Range("B" & i).value = item("name")
+            Range("C" & i).value = item("key")
+            Range("D" & i).value = item("id")
+            Range("E" & i).value = item("projectTypeKey")
+            Range("F" & i).value = item("isPrivate")
+            Range("G" & i).value = item("style")
+            Range("H" & i).value = item("insight")("totalIssueCount")
+            Range("I" & i).value = item("insight")("lastIssueUpdateTime")
+            '=============   Call Current Project ====================
+            startRow = i + 1
+            RestCallResponse = RestAPICall("rest/api/3/project/" & item("id"))
+            Set currentproject = ParseJson(RestCallResponse)
+            Range("J" & i).value = currentproject("lead")("displayName")
+            Range("K" & i).value = currentproject("lead")("active")
+            Range("L" & i).value = currentproject("assigneeType")
+            
+            
+            Set currentstatuses = ParseJson(RestAPICall("rest/api/3/project/" + item("id") + "/statuses"))
+            '========================================================
+            Dim issueTypes As Object
+            For Each issueTypes In currentstatuses
+                i = i + 1
+                Range("B" & i).value = "Issue Type:"
+                Range("C" & i).value = issueTypes("id")
+                Range("D" & i).value = issueTypes("name")
+                Range("E" & i).value = "Is it a subtask: " & issueTypes("subtask")
+                
+                Dim status As Object
+                For Each status In issueTypes("statuses")
+                    i = i + 1
+                    Range("C" & i).value = "Status:"
+                    Range("D" & i).value = status("name")
+                    Range("E" & i).value = status("id")
+                    Range("F" & i).value = status("statusCategory")("name")
+                    Range("F" & i).value = status("statusCategory")("colorName")
+                    Range("F" & i).value = status("statusCategory")("key")
+                Next
+            Next
+            '=========================================================
+            Dim Versions As Object
+            For Each Versions In currentproject("versions")
+                i = i + 1
+                Range("B" & i).value = "Version:"
+                Range("C" & i).value = Versions("id")
+                Range("D" & i).value = Versions("name")
+                Range("E" & i).value = "Is It Archived: " & Versions("archived")
+                Range("E" & i).value = "Has It Been Released: " & Versions("released")
+            Next
+            '==========================================================
+            Dim components As Object
+            For Each components In currentproject("components")
+                i = i + 1
+                Range("B" & i).value = "Component:"
+                Range("C" & i).value = components("id")
+                Range("D" & i).value = components("name")
+            Next
+            '===========================================================
+            Dim role As Variant
+            For Each role In currentproject("roles")
+                i = i + 1
+           
+                Range("B" & i).value = "Role:"
+                Range("C" & i).value = role
+                
+            Next
+            '============================================================
+           Set currentnotificationscheme = ParseJson(RestAPICall("rest/api/3/project/" + item("id") + "/notificationscheme/"))
+            i = i + 1
+            Range("B" & i).value = "Notification Scheme:"
+            Range("C" & i).value = currentnotificationscheme("id")
+            Range("D" & i).value = currentnotificationscheme("name")
+            Range("E" & i).value = currentnotificationscheme("description")
+            
+            Set permissionscheme = ParseJson(RestAPICall("rest/api/3/project/" + item("id") + "/permissionscheme"))
+            i = i + 1
+            Range("B" & i).value = "Permission Scheme:"
+            Range("C" & i).value = permissionscheme("id")
+            Range("D" & i).value = permissionscheme("name")
+            Range("E" & i).value = permissionscheme("description")
+            '==========================================================
+            
+            success = GroupRows("A", startRow, i)
+            
+        Next
+        
+        startAt = startAt + json("maxResults")
+        IsLast = json("isLast")
+    Loop
+
+End Function
+
+Public Function RetrieveCloudUsers()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim counter As Integer
+Dim i As Integer
+Dim startAt As Integer
+Dim maxRecords As Integer
+Dim IsLast As Boolean
+
+    startAt = 0
+    maxResults = 50
+    IsLast = False
+    counter = 0
+    i = 1
+    
+    CreateSheet ("Users")
+    Range("A1").value = "Count"
+    Range("B1").value = "Display Name"
+    Range("C1").value = "ID"
+    Range("D1").value = "Email Address"
+    Range("E1").value = "Account Type"
+    Range("F1").value = "Time Zone"
+    Range("G1").value = "Locale"
+    Range("H1").value = "Active"
+    Range("I1").value = "Created By Record Count"
+    Range("J1").value = "Reported By Record Count"
+    Range("J1").value = "Assigned Record Count"
+    
+    Do Until IsLast = True
+        RestCallResponse = RestAPICall("rest/api/3/users/search?startAt=" & startAt & "&maxResults=" & maxResults)
+        Set json = ParseJson(RestCallResponse)
+        
+        For Each item In json
+            counter = counter + 1
+            i = i + 1
+            
+            Range("A" & i).value = i - 1
+            Range("B" & i).value = item("displayName")
+            Range("C" & i).value = item("accountId")
+            Range("D" & i).value = item("emailAddress")
+            Range("E" & i).value = item("accountType")
+            Range("F" & i).value = item("timeZone")
+            Range("G" & i).value = item("locale")
+            Range("H" & i).value = item("active")
+            '=============================================
+            Range("I" & i).value = RetrieveCloudIssuesCreatedByUser(item("accountId"))
+            Range("J" & i).value = RetrieveCloudIssueCountReportedByUser(item("accountId"))
+            Range("K" & i).value = RetrieveCloudIssuesAssignedToUser(item("accountId"))
+            '=============================================
+            
+        Next
+        'Debug.Print "Record Count: " & i
+        startAt = startAt + maxResults
+        If (counter < maxResults) Then
+            IsLast = True
+        End If
+        counter = 0
+        
+    Loop
+ 
+End Function
+Public Function RetrieveCloudIssuesCreatedByUser(UserName As String) As Integer
+Dim json As Object
+Dim RestCallResponse As String
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/3/search?jql=creator=" + UserName + "&maxResults=0")
+    
+    Set json = ParseJson(RestCallResponse)
+    RetrieveCloudIssuesCreatedByUser = json("total")
+End Function
+Public Function RetrieveCloudIssueCountReportedByUser(UserName As String) As Integer
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/3/search?jql=reporter=" + "'" + UserName + "'" + "&maxResults=0")
+    Set json = ParseJson(RestCallResponse)
+     RetrieveCloudIssueCountReportedByUser = json("total")
+End Function
+
+Public Function RetrieveCloudIssuesAssignedToUser(UserName As String) As Integer
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Integer
+    RestCallResponse = RestAPICall("rest/api/3/search?jql=assignee =" + UserName + "&maxResults=0")
+    Set json = ParseJson(RestCallResponse)
+     RetrieveCloudIssuesAssignedToUser = json("total")
+End Function
+Public Function RetrieveCloudFilters()
+Dim json As Object
+Dim currentFilter As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim sharedPermission As Object
+Dim sharedUsers As Object
+Dim i As Integer
+Dim startAt As Integer
+Dim IsLast As Boolean
+Dim maxResults As Integer
+Dim startRow As Integer
+    maxResults = 50
+    startAt = 0
+
+    IsLast = False
+    counter = 0
+    i = 1
+    CreateSheet ("Filters")
+    Range("A1").value = "Count"
+    Range("B1").value = "Filter Name"
+    Range("C1").value = "Description"
+    Range("D1").value = "ID"
+    Range("E1").value = "Owner"
+    Range("F1").value = "Active"
+    Range("G1").value = "JQL"
+    Range("H1").value = "View URL"
+    Range("I1").value = "Rest API Call"
+    Range("J1").value = "Is Writable"
+    Range("J1").value = "Shared Users Count"
+    Range("J1").value = "Subscriptions"
+
+     Do Until IsLast = True
+        RestCallResponse = RestAPICall("rest/api/3/filter/search?startAt=" & startAt & "&maxResults=" & maxResults)
+        Set json = ParseJson(RestCallResponse)
+        
+        For Each item In json("values")
+            startRow = i + 1
+            RestCallResponse = RestAPICall("rest/api/3/filter/" & item("id"))
+            Set currentFilter = ParseJson(RestCallResponse)
+            i = i + 1
+            Range("A" & i).value = i - 1
+            Range("B" & i).value = item("name")
+            Range("C" & i).value = currentFilter("description")
+            Range("D" & i).value = item("id")
+            Range("E" & i).value = currentFilter("owner")("displayName")
+            Range("F" & i).value = currentFilter("owner")("active")
+            Range("G" & i).value = currentFilter("jql")
+            Range("H" & i).value = currentFilter("viewUrl")
+            Range("I" & i).value = currentFilter("searchUrl")
+            Range("J" & i).value = currentFilter("isWritable")
+            Range("K" & i).value = currentFilter("sharedUsers")("size")
+            Range("L" & i).value = currentFilter("subscriptions")("size")
+            
+            For Each sharedPermission In currentFilter("sharePermissions")
+                i = i + 1
+                Range("B" & i).value = "Shared Permission"
+                Range("C" & i).value = sharedPermission("type")
+                Range("D" & i).value = sharedPermission("id")
+                
+            Next
+            
+            For Each sharedUsers In currentFilter("sharedUsers")("items")
+                i = i + 1
+                Range("B" & i).value = "Shared User"
+                Range("C" & i).value = sharedUsers
+            Next
+            
+            Debug.Print "START: " & startRow & " End Row: " & i
+            
+            'success = GroupRows("A", startRow, i)
+        Next
+        
+        startAt = startAt + maxResults
+        
+        IsLast = json("isLast")
+    Loop
+
+End Function
