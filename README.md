@@ -9,4 +9,3 @@ Information pulled from Jira will include:
 4.  Notification scheme
 5.  Permission scheme
 
-This is for Tony
