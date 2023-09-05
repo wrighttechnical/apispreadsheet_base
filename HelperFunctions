@@ -60,7 +60,7 @@ End With
 Set JiraService = Nothing
 End Function
 
-Public Function GroupRows(Col As String, startRow As Integer, endRow As Integer) As Boolean
+Public Function GroupRows(Col As String, startRow As Long, endRow As Long) As Boolean
 
     Range(Col & startRow & ":" & Col & endRow).Select
     Selection.Rows.Group
@@ -69,5 +69,17 @@ Public Function GroupRows(Col As String, startRow As Integer, endRow As Integer)
         .SummaryRow = xlAbove
         .SummaryColumn = xlRight
     End With
+
+End Function
+Public Function NodeExist(item As Object, element As String) As Boolean
+On Error GoTo ElementDoesNotExist:
+        If (item(element).Count > 0) Then
+            NodeExist = True
+            Exit Function
+        End If
+Exit Function
+ElementDoesNotExist:
+    On Error GoTo 0
+    NodeExist = False
 
 End Function
