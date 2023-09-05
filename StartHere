@@ -26,14 +26,18 @@ Sub StartHere()
     CloudInstance = InStr(URL, "atlassian.net")
     UserNamePassword = EncodeToBase64(UserName + ":" + Password)
     
-    Range("B10") = UserNamePassword
+    'Range("B10") = UserNamePassword
     Set JiraInstance = Workbooks.Add
         
     If (CloudInstance) Then
-        'RetrieveCloudUsers
+        RetrieveCloudIssueTypeSchemes
+        RetrieveCloudWorkflowSchemas
+        RetrieveCloudStatus
+        RetrieveCloudWorkflow
+        RetrieveCloudUsers
         RetrieveCloudFilters
-        'RetrieveCloudProjects
-        'RetrieveCloudApplicationProperties
+        RetrieveCloudProjects
+        RetrieveCloudApplicationProperties
     Else
     
         RetrieveApplicationProperties
@@ -46,7 +50,8 @@ Sub StartHere()
     If (RangeExists("Sheet1") = True And JiraInstance.Worksheets.Count > 1) Then
         Application.DisplayAlerts = False
         Worksheets("Sheet1").Delete
-        Application.DisplayAlerts = True
     End If
+    
+   'MsgBox "FINISHED"
     
 End Sub

@@ -248,14 +248,14 @@ maxRecords = 1000
                 
             Next
             Set currentworkflowscheme = ParseJson(RestAPICall("rest/api/2/project/" + item("id") + "/workflowscheme"))
-            Dim workflowscheme As Variant
-            For Each workflowscheme In currentworkflowscheme("issueTypeMappings")
+            Dim workFlowScheme As Variant
+            For Each workFlowScheme In currentworkflowscheme("issueTypeMappings")
                 i = i + 1
                 'Debug.Print workflowscheme
                 'Debug.Print currentworkflowscheme("issueTypeMappings")(workflowscheme)
                 Range("B" & i).value = "Workflow Scheme:"
-                Range("C" & i).value = workflowscheme
-                Range("D" & i).value = currentworkflowscheme("issueTypeMappings")(workflowscheme)
+                Range("C" & i).value = workFlowScheme
+                Range("D" & i).value = currentworkflowscheme("issueTypeMappings")(workFlowScheme)
             Next
             Set currentnotificationscheme = ParseJson(RestAPICall("rest/api/2/project/" + item("id") + "/notificationscheme/"))
             i = i + 1

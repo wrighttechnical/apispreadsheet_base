@@ -1,0 +1,41 @@
+Public Function Template()
+Dim json As Object
+Dim RestCallResponse As String
+Dim item As Object
+Dim i As Long
+Dim startAt As Long
+Dim maxResults As Long
+Dim startRow As Long
+Dim counter As Long
+i = 1
+maxResults = 50
+startAt = 0
+    
+    CreateSheet ("Workflow Schemes")
+    Range("A1").value = "Count"
+    Range("B1").value = "Name"
+    Range("C1").value = "ID"
+    Range("D1").value = "Description"
+    
+    Do Until IsLast = True
+        RestCallResponse = RestAPICall("rest/api/3/workflowscheme?startAt=" & startAt & "&maxResults=" & maxResults)
+        Set json = ParseJson(RestCallResponse)
+        
+        For Each item In json("values")
+            counter = counter + 1
+            i = i + 1
+            Range("A" & i).value = counter
+            Range("B" & i).value = item("name")
+            Range("C" & i).value = item("id")
+            Range("D" & i).value = item("description")
+    
+    
+    
+    
+        Next
+        startAt = startAt + maxResults
+        IsLast = json("isLast")
+    Loop
+    
+End Function
+
